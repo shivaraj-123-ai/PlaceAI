@@ -10,7 +10,7 @@ import FeedbackReport from './pages/FeedbackReport';
 import { apiFetch } from './utils/api';
 
 // Define Backend API Base URL
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080').trim();
 
 export default function App() {
   const [sessionId, setSessionId] = useState(null);
