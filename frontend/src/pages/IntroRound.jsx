@@ -335,14 +335,11 @@ export default function IntroRound({ sessionId, onNextRound, API_URL, cameraStre
 
     const finalAnswer = cameraDenied ? typedAnswer : (transcription + interimText).trim();
     
-    // Save to database via endpoint
-    setLoading(true);
     const q = questions[currentIdx];
-    if (!q) return;
-    const duration = speakingStartTime ? Math.round((Date.now() - speakingStartTime) / 1000) : 10;
-    
-    try {
-      const response = await apiFetch(`${API_URL}/api/sessions/${sessionId}/interview/answer`, {
+    if (q) {
+      const duration = speakingStartTime ? Math.round((Date.now() - speakingStartTime) / 1000) : 10;
+      
+      apiFetch(`${API_URL}/api/sessions/${sessionId}/interview/answer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -355,16 +352,8 @@ export default function IntroRound({ sessionId, onNextRound, API_URL, cameraStre
           silence_gaps: silenceGaps,
           filler_words_detected: fillerCounts
         })
-      });
-      
-      if (!response.ok) {
-        console.warn("Failed to submit answer evaluation.");
-      }
-    } catch (e) {
-      console.error(e);
+      }).catch(err => console.error("Error submitting answer:", err));
     }
-
-    setLoading(false);
 
     if (currentIdx < questions.length - 1) {
       setCurrentIdx(prev => prev + 1);

@@ -277,40 +277,45 @@ export default function TechRound({ sessionId, onNextRound, API_URL, candidateNa
 
     const finalAnswer = cameraDenied ? typedAnswer : (transcription + interimText).trim();
     
-    setLoading(true);
     const q = questions[currentIdx];
-    if (!q) return;
-    const duration = speakingStartTime ? Math.round((Date.now() - speakingStartTime) / 1000) : 10;
-    
-    try {
-      await apiFetch(`${API_URL}/api/sessions/${sessionId}/interview/answer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          round: 3,
-          question_index: q.question_index,
-          question_text: q.question_text || q.question,
-          answer_text: finalAnswer || "No verbal response recorded.",
-          duration_sec: duration,
-          hesitation_count: hesitationCount,
-          silence_gaps: silenceGaps,
-          filler_words_detected: fillerCounts
-        })
-      });
-    } catch (e) {
-      console.error(e);
-    }
+    if (q) {
+      const duration = speakingStartTime ? Math.round((Date.now() - speakingStartTime) / 1000) : 10;
+      const submitBody = {
+        round: 3,
+        question_index: q.question_index,
+        question_text: q.question_text || q.question,
+        answer_text: finalAnswer || "No verbal response recorded.",
+        duration_sec: duration,
+        hesitation_count: hesitationCount,
+        silence_gaps: silenceGaps,
+        filler_words_detected: fillerCounts
+      };
 
-    setLoading(false);
+      if (currentIdx < questions.length - 1) {
+        apiFetch(`${API_URL}/api/sessions/${sessionId}/interview/answer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(submitBody)
+        }).catch(err => console.error("Error submitting answer:", err));
+        
+        setCurrentIdx(prev => prev + 1);
+      } else {
+        setStage('generating');
+        try {
+          await apiFetch(`${API_URL}/api/sessions/${sessionId}/interview/answer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(submitBody)
+          });
+        } catch (e) {
+          console.error("Error submitting final answer:", e);
+        }
 
-    if (currentIdx < questions.length - 1) {
-      setCurrentIdx(prev => prev + 1);
-    } else {
-      // Completed last interview question. Move to Feedback Report generation!
-      if (silenceNudgeInterval.current) clearInterval(silenceNudgeInterval.current);
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-      
-      generateReport();
+        if (silenceNudgeInterval.current) clearInterval(silenceNudgeInterval.current);
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        
+        generateReport();
+      }
     }
   };
 
