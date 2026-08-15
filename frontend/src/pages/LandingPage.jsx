@@ -60,9 +60,30 @@ export default function LandingPage({ onSessionCreated, API_URL }) {
     setLoading(true);
     setError('');
     
+    // Set up step-by-step progress status messages
+    setStatusText('Reading your resume...');
+    const startTime = Date.now();
+    
+    const timer1 = setTimeout(() => {
+      setStatusText('Identifying your skills...');
+    }, 1000); // after 1s
+    
+    const timer2 = setTimeout(() => {
+      setStatusText('Analysing your projects...');
+    }, 3000); // after 3s (1s + 2s)
+    
+    const timer3 = setTimeout(() => {
+      setStatusText('Preparing your interview...');
+    }, 5000); // after 5s (3s + 2s)
+
+    const clearStatusTimers = () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
+
     try {
       // 1. Create Session
-      setStatusText('Initializing session...');
       const sessionResponse = await apiFetch(`${API_URL}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -81,7 +102,6 @@ export default function LandingPage({ onSessionCreated, API_URL }) {
       setSessionId(newSessionId);
 
       // 2. Extract PDF Text Client-side
-      setStatusText('Reading PDF text client-side...');
       const extractedText = await extractTextFromPdf(file);
       
       if (!extractedText.trim()) {
@@ -89,7 +109,6 @@ export default function LandingPage({ onSessionCreated, API_URL }) {
       }
 
       // 3. Post to backend resume endpoint
-      setStatusText('Analyzing resume and mapping skills with Gemini AI...');
       const resumeResponse = await apiFetch(`${API_URL}/api/sessions/${newSessionId}/resume`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -101,6 +120,17 @@ export default function LandingPage({ onSessionCreated, API_URL }) {
       }
 
       const resumeData = await resumeResponse.json();
+      
+      // Ensure all visual progress steps get shown to the user
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 5000) {
+        await new Promise(resolve => setTimeout(resolve, 5000 - elapsed));
+      }
+      
+      // Final step is done
+      setStatusText('Preparing your interview...');
+      clearStatusTimers();
+
       setParsedResume(resumeData.resume_data);
       
       // Update candidate name if Gemini guessed it
@@ -110,9 +140,11 @@ export default function LandingPage({ onSessionCreated, API_URL }) {
 
     } catch (err) {
       console.error(err);
+      clearStatusTimers();
       setError(err.message || 'An unexpected error occurred. Please try again.');
       setLoading(false);
     } finally {
+      clearStatusTimers();
       setLoading(false);
     }
   };
