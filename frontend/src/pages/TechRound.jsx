@@ -20,8 +20,6 @@ export default function TechRound({ sessionId, onNextRound, API_URL, candidateNa
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [silenceTimer, setSilenceTimer] = useState(0);
   const [nudgeMessage, setNudgeMessage] = useState('');
-  const [timeLeft, setTimeLeft] = useState(60); // 60s soft timer per question
-  
   // Type-in fallback
   const [typedAnswer, setTypedAnswer] = useState('');
 
@@ -40,7 +38,6 @@ export default function TechRound({ sessionId, onNextRound, API_URL, candidateNa
 
   const recognitionRef = useRef(null);
   const silenceNudgeInterval = useRef(null);
-  const questionTimerRef = useRef(null);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
@@ -226,7 +223,6 @@ export default function TechRound({ sessionId, onNextRound, API_URL, candidateNa
     setTranscription('');
     setInterimText('');
     setTypedAnswer('');
-    setTimeLeft(60);
     setSilenceTimer(0);
     setNudgeMessage('');
     setHesitationCount(0);
@@ -234,21 +230,6 @@ export default function TechRound({ sessionId, onNextRound, API_URL, candidateNa
     setFillerCounts({ umm: 0, like: 0, basically: 0, you_know: 0, so: 0 });
 
     speakQuestion(q.question_text || q.question);
-
-    if (questionTimerRef.current) clearInterval(questionTimerRef.current);
-    questionTimerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          handleNextQuestion();
-          return 60;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (questionTimerRef.current) clearInterval(questionTimerRef.current);
-    };
   }, [currentIdx, questions, stage]);
 
   // Silence checker loop
@@ -326,7 +307,6 @@ export default function TechRound({ sessionId, onNextRound, API_URL, candidateNa
       setCurrentIdx(prev => prev + 1);
     } else {
       // Completed last interview question. Move to Feedback Report generation!
-      if (questionTimerRef.current) clearInterval(questionTimerRef.current);
       if (silenceNudgeInterval.current) clearInterval(silenceNudgeInterval.current);
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       
@@ -458,10 +438,6 @@ export default function TechRound({ sessionId, onNextRound, API_URL, candidateNa
                   ARIA Tech Review
                 </div>
               )}
-
-              <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white border border-white/10">
-                Timer: {timeLeft}s
-              </div>
             </div>
 
             <div className="bg-darkcard border border-white/5 p-4 rounded-xl glass-panel min-h-[140px] flex flex-col justify-between">

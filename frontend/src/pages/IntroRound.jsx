@@ -21,7 +21,6 @@ export default function IntroRound({ sessionId, onNextRound, API_URL, cameraStre
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [silenceTimer, setSilenceTimer] = useState(0); // counts seconds of silence
   const [nudgeMessage, setNudgeMessage] = useState('');
-  const [timeLeft, setTimeLeft] = useState(90); // 90s soft timer per question
   
   // Type-in fallback
   const [typedAnswer, setTypedAnswer] = useState('');
@@ -42,7 +41,6 @@ export default function IntroRound({ sessionId, onNextRound, API_URL, cameraStre
   const recognitionRef = useRef(null);
   const speechIntervalRef = useRef(null);
   const silenceNudgeInterval = useRef(null);
-  const questionTimerRef = useRef(null);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
@@ -277,7 +275,6 @@ export default function IntroRound({ sessionId, onNextRound, API_URL, cameraStre
     setTranscription('');
     setInterimText('');
     setTypedAnswer('');
-    setTimeLeft(90);
     setSilenceTimer(0);
     setNudgeMessage('');
     setHesitationCount(0);
@@ -285,22 +282,6 @@ export default function IntroRound({ sessionId, onNextRound, API_URL, cameraStre
     setFillerCounts({ umm: 0, like: 0, basically: 0, you_know: 0, so: 0 });
 
     speakQuestion(q.question_text || q.question);
-
-    // Question soft timer (90s limit)
-    if (questionTimerRef.current) clearInterval(questionTimerRef.current);
-    questionTimerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          handleNextQuestion();
-          return 90;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (questionTimerRef.current) clearInterval(questionTimerRef.current);
-    };
   }, [currentIdx, questions, stage]);
 
   // Silence checker loop
@@ -390,7 +371,6 @@ export default function IntroRound({ sessionId, onNextRound, API_URL, cameraStre
     } else {
       // Completed HR Round. Auto-proceed to Tech Round 3
       if (speechIntervalRef.current) clearInterval(speechIntervalRef.current);
-      if (questionTimerRef.current) clearInterval(questionTimerRef.current);
       if (silenceNudgeInterval.current) clearInterval(silenceNudgeInterval.current);
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       
@@ -428,7 +408,7 @@ export default function IntroRound({ sessionId, onNextRound, API_URL, cameraStre
                 </li>
                 <li className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-gold shrink-0 mt-0.5" />
-                  <span><strong>Pacing & Nudges:</strong> A soft 60-second limit applies per question. Gaps in speech & filler words are counted.</span>
+                  <span><strong>Pacing & Nudges:</strong> Take as much time as you need. Gaps in speech & filler words are counted.</span>
                 </li>
               </ul>
             </div>
@@ -520,11 +500,6 @@ export default function IntroRound({ sessionId, onNextRound, API_URL, cameraStre
                   ARIA Recording
                 </div>
               )}
-
-              {/* Countdown timer overlay */}
-              <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white border border-white/10">
-                Timer: {timeLeft}s
-              </div>
             </div>
 
             {/* Real-time transcription box */}
