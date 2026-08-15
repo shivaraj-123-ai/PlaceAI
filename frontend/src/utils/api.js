@@ -27,11 +27,12 @@ const fetchWithRetry = async (url, options, retries = 3) => {
 
       // Throw on server-side errors (>= 500) to trigger retry
       if (response.status >= 500) {
-        throw new Error(`500 error`);
+        throw new Error(`500 error (status ${response.status})`);
       }
       // Return 4xx client errors immediately
       return response;
     } catch (error) {
+      console.error(`[API Fetch Attempt ${i + 1} Failed] URL: ${url}`, error);
       if (i === retries - 1) throw error;
 
       // Map raw error to friendly message during retry
