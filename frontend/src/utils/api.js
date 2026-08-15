@@ -51,7 +51,7 @@ const fetchWithRetry = async (url, options, retries = 3) => {
       window.dispatchEvent(
         new CustomEvent('api-progress', {
           detail: {
-            message: `${friendlyMessage}\nRetrying... (Attempt ${i + 2}/${retries})`
+            message: `${friendlyMessage}\nTarget URL: ${url}\nRetrying... (Attempt ${i + 2}/${retries})`
           }
         })
       );
@@ -104,6 +104,6 @@ export async function apiFetch(url, options = {}) {
       finalFriendlyMessage = 'Connection issue. Retrying automatically...';
     }
 
-    throw new Error(finalFriendlyMessage);
+    throw new Error(`${finalFriendlyMessage}\n(Failed to connect to: ${url}. Details: ${errMsg || error})`);
   }
 }
