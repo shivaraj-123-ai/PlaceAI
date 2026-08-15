@@ -1610,7 +1610,7 @@ async def submit_interview_answer(session_id: str, body: InterviewAnswerRequest)
     
     # Prompt Gemini to evaluate this specific answer
     prompt = f"""
-    You are ARIA, an AI Recruiter. Evaluate the candidate's spoken response to the following question.
+    You are a strict but fair senior interviewer. Evaluate the candidate's spoken response to the following question. Do not sugarcoat poor answers.
     Question: {body.question_text}
     Candidate Answer: {body.answer_text}
     Metrics:
@@ -1619,14 +1619,22 @@ async def submit_interview_answer(session_id: str, body: InterviewAnswerRequest)
     - Speaking duration: {body.duration_sec} seconds
     - Selected Company Mode: {company_mode}
 
-    Provide a fair score out of 100 for this answer. Take into account accuracy, depth, structure (e.g., STAR method for behavioral questions), and communication flow.
-    Provide a concise, encouraging feedback statement (under 3 sentences).
-    Determine if the answer length category is "too short" (under 15 words/very quick), "good" (well-structured, 30-80 words), or "detailed" (highly informative).
-    
+    SCORING RULES:
+    - If the candidate gave a very short answer (under 15 words) or it was wrong/vague: score below 50.
+    - If the technical answer is wrong or extremely vague: score below 40.
+    - Only give 80+ score if the answer is genuinely detailed, accurate, and confident.
+    - Deduct points for filler words (like "umm", "like", "basically") and silence gaps/hesitations.
+
+    FEEDBACK TONE:
+    - Be direct and specific — not generic.
+    - Explain exactly what was missing from the answer.
+    - Provide specific improvement steps.
+    - Do not say 'good effort' if the effort was poor. Feedback must match actual performance.
+
     Return a valid JSON object with the following fields:
     {{
       "ai_score": integer (0 to 100),
-      "ai_feedback": "Your constructive feedback string",
+      "ai_feedback": "Your constructive, specific feedback string (under 3 sentences)",
       "answer_length_category": "too short" | "good" | "detailed"
     }}
     """
@@ -1696,19 +1704,36 @@ async def generate_feedback_report(session_id: str):
     answers_data = answers_res.data or []
     
     prompt = f"""
-    You are an expert Placement Coach. Synthesize the candidate's performance across all rounds of the interview process to build a comprehensive feedback report.
+    You are a strict but fair senior placement coach. Synthesize the candidate's performance across all rounds of the interview process to build an honest and comprehensive feedback report. Do not sugarcoat poor performance.
     Candidate Name: {candidate_name}
     Company Mode: {company_mode}
     Resume Data: {json.dumps(resume_data)}
     Round 1 (Aptitude) Result: {json.dumps(aptitude_result)}
     Rounds 2 & 3 Answers & Evaluations: {json.dumps(answers_data)}
 
-    Calculate an overall score out of 100 based on the weights:
+    SCORING RULES FOR THE OVERALL REPORT:
     - Aptitude: 20%
     - Communication: 30% (from Round 2 and Round 3 behavioral)
     - Technical Knowledge: 30% (from Round 3 technical)
     - Confidence: 10% (from hesitation, silence gaps, answer lengths)
     - Structure: 10% (STAR method usage in answers)
+
+    Strict Scoring Guidelines:
+    - If candidate gave very short answers overall: score below 50, mention it clearly in feedback.
+    - If candidate used many filler words: deduct points and mention the exact count.
+    - If candidate went silent frequently: mention it as a major weakness.
+    - If technical answers were wrong or vague: score below 40 for technical knowledge.
+    - Only give 80+ score if answers were genuinely detailed, correct, and confident.
+    - The overall score must strictly align with the actual scores and metrics in the input performance data.
+
+    FEEDBACK TONE:
+    - Be direct and specific — not generic.
+    - BAD: 'You did a good job overall'
+    - GOOD: 'Your answer to Question 3 was too vague. You said only 2 sentences when the question needed a detailed explanation.'
+    - Always mention exactly what was missing.
+    - Always give specific improvement steps.
+    - Do not say 'good effort' if effort was poor.
+    - All feedback text must strictly match actual performance data.
 
     Evaluate and provide the 6 required cards in the feedback report:
     1. Where You Got Stuck: Identify specific questions where silence gaps or long pauses happened, and give advice.
