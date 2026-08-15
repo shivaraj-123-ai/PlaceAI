@@ -148,22 +148,43 @@ export default function IntroRound({ sessionId, onNextRound, API_URL, cameraStre
   const speakQuestion = (text) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.05;
-      utterance.pitch = 1.0;
       
       const voices = window.speechSynthesis.getVoices();
-      // Prefer standard English voice
-      const preferred = voices.find(v => v.lang.includes('en-US') || v.lang.includes('en-GB'));
-      if (preferred) {
-        utterance.voice = preferred;
-      }
+      const preferredVoice = voices.find(v => 
+        v.name.includes('Google UK English Female') ||
+        v.name.includes('Google US English') ||
+        v.name.includes('Microsoft Zira') ||
+        v.name.includes('Samantha')
+      );
       
-      utterance.onend = () => {
-        startRecognition();
+      // Fix voice cracking on long text:
+      // Split into sentences and speak one by one
+      const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+      let index = 0;
+      
+      const speakNext = () => {
+        if (index < sentences.length) {
+          const utt = new SpeechSynthesisUtterance(sentences[index].trim());
+          if (preferredVoice) utt.voice = preferredVoice;
+          utt.rate = 0.85;   // slightly slower
+          utt.pitch = 1.0;   // natural pitch
+          utt.volume = 1.0;  // full volume
+          
+          utt.onend = () => {
+            index++;
+            if (index < sentences.length) {
+              speakNext();
+            } else {
+              startRecognition();
+            }
+          };
+          
+          window.speechSynthesis.speak(utt);
+        } else {
+          startRecognition();
+        }
       };
-      
-      window.speechSynthesis.speak(utterance);
+      speakNext();
     } else {
       // Fallback if no TTS
       startRecognition();
@@ -324,6 +345,11 @@ export default function IntroRound({ sessionId, onNextRound, API_URL, cameraStre
   }, [transcription, interimText]);
 
   const handleNextQuestion = async () => {
+    // Cancel any ongoing speech immediately
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    
     // Stop recording
     if (recognitionRef.current) {
       try {
