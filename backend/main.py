@@ -802,15 +802,15 @@ def mock_gemini_response(prompt: str) -> dict:
             ]
         else:
             return [
-                {"question_index": 1, "category": "Resume Deep Dive", "question_text": "Could you walk me through the tech stack of your E-Commerce Platform project?"},
-                {"question_index": 2, "category": "Resume Deep Dive", "question_text": "How did you practically implement React and SQL in your applications?"},
-                {"question_index": 3, "category": "Resume Deep Dive", "question_text": "What was the biggest technical challenge you faced in your Data Analytics Dashboard and how did you solve it?"},
+                {"question_index": 1, "category": "Resume Deep Dive", "question_text": "You built an E-Commerce Platform project. What technology did you use and why did you choose it?"},
+                {"question_index": 2, "category": "Resume Deep Dive", "question_text": "How did you use React and SQL in your applications? Tell me about one skill."},
+                {"question_index": 3, "category": "Resume Deep Dive", "question_text": "What was the biggest technical problem you faced in your Data Analytics Dashboard? How did you solve it?"},
                 {"question_index": 4, "category": "Technical Skill", "question_text": "Explain the difference between functional components and class components in React."},
-                {"question_index": 5, "category": "Technical Skill", "question_text": "How does Node.js handle asynchronous operations under the hood?"},
-                {"question_index": 6, "category": "Technical Skill", "question_text": "What are indexes in SQL, and how do they optimize query performance?"},
+                {"question_index": 5, "category": "Technical Skill", "question_text": "How does Node.js handle asynchronous tasks under the hood?"},
+                {"question_index": 6, "category": "Technical Skill", "question_text": "What are indexes in SQL, and how do they speed up queries?"},
                 {"question_index": 7, "category": "Technical Skill", "question_text": "What is the difference between list and tuple in Python?"},
-                {"question_index": 8, "category": "Company-Specific", "question_text": "How would you design a highly scalable cache system for search queries?"},
-                {"question_index": 9, "category": "Company-Specific", "question_text": "How do you handle delivering high quality code under extremely tight deadlines?"}
+                {"question_index": 8, "category": "Company-Specific", "question_text": "How would you design a scalable cache system for search queries?"},
+                {"question_index": 9, "category": "Company-Specific", "question_text": "How do you deliver good code when you have a very tight deadline?"}
             ]
             
     return {}
@@ -1479,11 +1479,22 @@ async def generate_interview_questions(session_id: str, body: InterviewQuestions
         Questions must reference exact project names,
         exact skills, exact technologies from their resume.
 
+        CRITICAL QUESTION FORMATTING RULES FOR ROUND 3:
+        1. Ask the technical questions in simple plain English.
+        2. Maximum question length is 25 words.
+        3. Split complex questions into simple parts.
+           - WRONG: "Could you elaborate on the architectural decisions and trade-offs you encountered while implementing the backend of your project using the mentioned tech stack?"
+           - RIGHT: "You built a backend in your project. What technology did you use and why did you choose it?"
+        4. Ask one question at a time — do not combine two questions into one sentence.
+        5. Use simple words — DO NOT use words like: "elaborate", "demonstrate", "articulate", "methodology", "paradigm", "implement".
+           - Instead, use words like: "explain", "show", "tell me", "how", "why".
+        6. Keep sentences short and clear.
+
         EXAMPLES OF GOOD QUESTIONS:
-        - 'I see you built [exact project name from resume] using [exact tech stack]. Can you walk me through how you handled [specific challenge in that domain]?'
-        - 'Your resume mentions [exact skill]. Can you show a real example of how you used it in [their specific project]?'
-        - 'I notice a gap between [date] and [date] in your resume. Can you explain what you were doing during that time?'
-        - 'You listed [exact tool] as a skill but none of your projects mention using it. Can you elaborate on your experience with it?'
+        - 'I see you built [exact project name]. What technology did you use and why did you choose it?'
+        - 'You listed [exact skill] on your resume. How did you use it in [their specific project]?'
+        - 'I see a timeline gap from [date] to [date] on your resume. Can you explain what you did then?'
+        - 'You listed [exact tool] as a skill. Tell me how you have used it.'
 
         RULES:
         - Never ask generic questions like 'Tell me about your skills'
@@ -1507,6 +1518,7 @@ async def generate_interview_questions(session_id: str, body: InterviewQuestions
             - Wipro: Quick technology adaptation and independent learning.
             - Accenture: Delivering quality code under tight client deadlines.
             - General: Standard technical design + team collaboration mix.
+          - Make sure company-specific questions also follow the critical question formatting rules (simple language, max 25 words, no complex/forbidden words).
 
         Return a valid JSON array of exactly 9 question objects matching this structure:
         [
@@ -1549,15 +1561,15 @@ async def generate_interview_questions(session_id: str, body: InterviewQuestions
             ]
         else:
             questions = [
-                {"question_index": 1, "category": "Resume Deep Dive", "question_text": "Could you walk me through the tech stack of your most notable project?"},
-                {"question_index": 2, "category": "Resume Deep Dive", "question_text": "How did you practically implement your key technical skills in your projects?"},
-                {"question_index": 3, "category": "Resume Deep Dive", "question_text": "What was the biggest technical challenge you faced and how did you solve it?"},
-                {"question_index": 4, "category": "Technical Skill", "question_text": "Explain the difference between SQL database indexing and a full-table scan."},
+                {"question_index": 1, "category": "Resume Deep Dive", "question_text": "You built a project. What technology did you use and why did you choose it?"},
+                {"question_index": 2, "category": "Resume Deep Dive", "question_text": "How did you use your skills in your projects? Tell me about one skill."},
+                {"question_index": 3, "category": "Resume Deep Dive", "question_text": "What was the biggest technical problem you faced? How did you solve it?"},
+                {"question_index": 4, "category": "Technical Skill", "question_text": "What is the difference between SQL database indexing and a full-table scan?"},
                 {"question_index": 5, "category": "Technical Skill", "question_text": "What is the difference between synchronous and asynchronous tasks?"},
-                {"question_index": 6, "category": "Technical Skill", "question_text": "How do you handle error management in your applications?"},
-                {"question_index": 7, "category": "Technical Skill", "question_text": "Explain the concept of REST APIs and how headers/bodies are used."},
-                {"question_index": 8, "category": "Company-Specific", "question_text": f"How would you ensure high system scalability for products at {company_mode}?"},
-                {"question_index": 9, "category": "Company-Specific", "question_text": "How do you manage to deliver quality code under extremely tight deadlines?"}
+                {"question_index": 6, "category": "Technical Skill", "question_text": "How do you handle errors in your code?"},
+                {"question_index": 7, "category": "Technical Skill", "question_text": "What is a REST API? How do you use headers and bodies?"},
+                {"question_index": 8, "category": "Company-Specific", "question_text": f"How would you make products at {company_mode} handle more users?"},
+                {"question_index": 9, "category": "Company-Specific", "question_text": "How do you deliver good code when you have a very tight deadline?"}
             ]
             
     # Normalize keys for questions to guarantee correct structure
